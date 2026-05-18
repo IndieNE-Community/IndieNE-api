@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: indiene-postgres
+    environment:
+      POSTGRES_DB: indiene
+      POSTGRES_USER: indiene
+      POSTGRES_PASSWORD: indiene
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U indiene -d indiene"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: indiene-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/indiene
+      SPRING_DATASOURCE_USERNAME: indiene
+      SPRING_DATASOURCE_PASSWORD: indiene
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
