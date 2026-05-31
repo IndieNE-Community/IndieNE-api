@@ -1,4 +1,4 @@
-package com.indiene.dto;
+package com.indiene.dto.request;
 
 import com.indiene.model.TipoUsuario;
 import jakarta.validation.constraints.Email;

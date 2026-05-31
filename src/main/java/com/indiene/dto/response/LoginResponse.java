@@ -1,4 +1,4 @@
-package com.indiene.dto;
+package com.indiene.dto.response;
 
 public record LoginResponse(
         String token,
