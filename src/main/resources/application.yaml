@@ -12,3 +12,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
+jwt:
+  secret: ${JWT_SECRET:troque-este-segredo-para-um-valor-com-pelo-menos-32-bytes-em-producao}
+  expiration: 86400000
