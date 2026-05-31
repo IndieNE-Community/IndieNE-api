@@ -1,7 +1,7 @@
 package com.indiene.controller;
 
-import com.indiene.dto.UsuarioCreateRequest;
-import com.indiene.dto.UsuarioResponse;
+import com.indiene.dto.request.UsuarioCreateRequest;
+import com.indiene.dto.response.UsuarioResponse;
 import com.indiene.model.Usuario;
 import com.indiene.service.UsuarioService;
 import jakarta.validation.Valid;

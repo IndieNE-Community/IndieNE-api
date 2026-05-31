@@ -1,8 +1,8 @@
 package com.indiene.service;
 
-import com.indiene.dto.LoginRequest;
-import com.indiene.dto.LoginResponse;
-import com.indiene.dto.UsuarioResponse;
+import com.indiene.dto.request.LoginRequest;
+import com.indiene.dto.response.LoginResponse;
+import com.indiene.dto.response.UsuarioResponse;
 import com.indiene.model.Usuario;
 import com.indiene.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;

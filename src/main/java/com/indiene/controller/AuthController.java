@@ -1,7 +1,7 @@
 package com.indiene.controller;
 
-import com.indiene.dto.LoginRequest;
-import com.indiene.dto.LoginResponse;
+import com.indiene.dto.request.LoginRequest;
+import com.indiene.dto.response.LoginResponse;
 import com.indiene.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

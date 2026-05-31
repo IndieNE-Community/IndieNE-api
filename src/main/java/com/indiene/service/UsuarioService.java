@@ -1,6 +1,6 @@
 package com.indiene.service;
 
-import com.indiene.dto.UsuarioCreateRequest;
+import com.indiene.dto.request.UsuarioCreateRequest;
 import com.indiene.model.Usuario;
 import com.indiene.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
