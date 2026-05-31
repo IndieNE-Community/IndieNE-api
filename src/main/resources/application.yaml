@@ -1,3 +1,7 @@
 spring:
   application:
     name: indiene-api
+  datasource:
+    url: jdbc:postgresql://localhost:5432/indiene
+    username: indiene
+    password: indiene
