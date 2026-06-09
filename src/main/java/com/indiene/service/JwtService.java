@@ -2,6 +2,7 @@ package com.indiene.service;
 
 import com.indiene.config.JwtProperties;
 import com.indiene.model.Usuario;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -32,6 +34,18 @@ public class JwtService {
                 .expiration(Date.from(now.plusMillis(expirationMs)))
                 .signWith(secretKey)
                 .compact();
+    }
+
+    public Claims parseClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    public UUID getUsuarioId(String token) {
+        return UUID.fromString(parseClaims(token).getSubject());
     }
 
     public long getExpirationMs() {
