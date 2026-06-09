@@ -9,24 +9,34 @@ import java.time.LocalDate;
 
 @Schema(description = "Payload de atualização de jogo")
 public record JogoUpdateRequest(
+        @Schema(description = "Título do jogo", example = "Indie Quest (editado)")
         @NotBlank @Size(max = 200) String titulo,
 
+        @Schema(description = "Descrição do jogo", example = "Descrição revisada")
         @Size(max = 10_000) String descricao,
 
+        @Schema(description = "Meta financeira da campanha", example = "15000.00")
         @PositiveOrZero Double metaFinanceira,
 
+        @Schema(description = "Identificador da campanha associada", example = "1")
         Integer campanha,
 
+        @Schema(description = "Data de início do desenvolvimento", example = "2026-01-15")
         LocalDate dataInicio,
 
+        @Schema(description = "Data prevista de conclusão", example = "2026-12-31")
         LocalDate dataConclusao,
 
+        @Schema(description = "Número de jogadores suportados", example = "4")
         @PositiveOrZero Integer numJogadores,
 
+        @Schema(description = "Gênero do jogo", example = "RPG")
         @Size(max = 100) String genero,
 
+        @Schema(description = "Suporta controle?", example = "true")
         Boolean controle,
 
+        @Schema(description = "URL da thumbnail", example = "https://x/y.png")
         @Size(max = 500) String imgThumb
 ) {
 }
