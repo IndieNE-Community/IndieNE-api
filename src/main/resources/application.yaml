@@ -1,10 +1,12 @@
 spring:
   application:
     name: indiene-api
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/indiene
-    username: indiene
-    password: indiene
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/indiene}
+    username: ${SPRING_DATASOURCE_USERNAME:indiene}
+    password: ${SPRING_DATASOURCE_PASSWORD:indiene}
+
   jpa:
     hibernate:
       ddl-auto: none
