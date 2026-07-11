@@ -3,7 +3,6 @@ package com.indiene.controller;
 import com.indiene.dto.request.ComentarioCreateRequest;
 import com.indiene.dto.request.ComentarioUpdateRequest;
 import com.indiene.dto.response.ComentarioResponse;
-import com.indiene.model.Comentario;
 import com.indiene.service.ComentarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -52,32 +51,31 @@ public class ComentarioController {
     public ResponseEntity<ComentarioResponse> criar(
             @Valid @RequestBody ComentarioCreateRequest request,
             @AuthenticationPrincipal UUID autorId) {
-        Comentario comentario = comentarioService.criar(request, autorId);
+        ComentarioResponse comentario = comentarioService.criar(request, autorId);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
-                .buildAndExpand(comentario.getId())
+                .buildAndExpand(comentario.id())
                 .toUri();
 
-        return ResponseEntity.created(location).body(ComentarioResponse.from(comentario));
+        return ResponseEntity.created(location).body(comentario);
     }
 
     @Operation(summary = "Buscar comentário por id")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Comentário encontrado"),
-            @ApiResponse(responseCode = "401", description = "Não autenticado"),
             @ApiResponse(responseCode = "404", description = "Comentário não encontrado")
     })
     @GetMapping("/{id}")
     public ComentarioResponse buscarPorId(@PathVariable Long id) {
-        return ComentarioResponse.from(comentarioService.buscarPorId(id));
+        return comentarioService.buscarPorId(id);
     }
 
-    @Operation(summary = "Listar comentários de uma publicação", description = "Lista paginada de comentários de uma publicação.")
+    @Operation(summary = "Listar comentários de uma publicação", description = "Lista paginada de comentários de uma publicação, com contagem de likes/dislikes.")
     @ApiResponse(responseCode = "200", description = "Página de comentários")
     @GetMapping
     public Page<ComentarioResponse> listar(@RequestParam Long postagemId, Pageable pageable) {
-        return comentarioService.listarPorPostagem(postagemId, pageable).map(ComentarioResponse::from);
+        return comentarioService.listarPorPostagem(postagemId, pageable);
     }
 
     @Operation(summary = "Atualizar comentário", description = "Apenas o autor pode atualizar.")
@@ -93,7 +91,7 @@ public class ComentarioController {
             @PathVariable Long id,
             @Valid @RequestBody ComentarioUpdateRequest request,
             @AuthenticationPrincipal UUID autorId) {
-        return ComentarioResponse.from(comentarioService.atualizar(id, request, autorId));
+        return comentarioService.atualizar(id, request, autorId);
     }
 
     @Operation(summary = "Deletar comentário", description = "Apenas o autor pode deletar.")

@@ -21,16 +21,24 @@ public record ComentarioResponse(
         Long postagemId,
 
         @Schema(description = "ID do usuário autor", example = "3f9c2b14-7d4e-4f1c-9a3e-2bc8a1f0e9d7")
-        UUID usuarioId
+        UUID usuarioId,
+
+        @Schema(description = "Quantidade de curtidas (LIKE)", example = "58")
+        long likes,
+
+        @Schema(description = "Quantidade de descurtidas (DISLIKE)", example = "0")
+        long dislikes
 ) {
 
-    public static ComentarioResponse from(Comentario comentario) {
+    public static ComentarioResponse of(Comentario comentario, long likes, long dislikes) {
         return new ComentarioResponse(
                 comentario.getId(),
                 comentario.getTexto(),
                 comentario.getData(),
                 comentario.getPostagemId(),
-                comentario.getUsuarioId()
+                comentario.getUsuarioId(),
+                likes,
+                dislikes
         );
     }
 }
