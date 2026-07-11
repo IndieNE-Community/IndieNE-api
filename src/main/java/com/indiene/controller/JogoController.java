@@ -3,7 +3,6 @@ package com.indiene.controller;
 import com.indiene.dto.request.JogoCreateRequest;
 import com.indiene.dto.request.JogoUpdateRequest;
 import com.indiene.dto.response.JogoResponse;
-import com.indiene.model.Jogo;
 import com.indiene.service.JogoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -50,14 +49,14 @@ public class JogoController {
     public ResponseEntity<JogoResponse> criar(
             @Valid @RequestBody JogoCreateRequest request,
             @AuthenticationPrincipal UUID autorId) {
-        Jogo jogo = jogoService.criar(request, autorId);
+        JogoResponse jogo = jogoService.criar(request, autorId);
 
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
-                .buildAndExpand(jogo.getId())
+                .buildAndExpand(jogo.id())
                 .toUri();
 
-        return ResponseEntity.created(location).body(JogoResponse.from(jogo));
+        return ResponseEntity.created(location).body(jogo);
     }
 
     @Operation(summary = "Buscar jogo por id")
@@ -68,14 +67,14 @@ public class JogoController {
     })
     @GetMapping("/{id}")
     public JogoResponse buscarPorId(@PathVariable Long id) {
-        return JogoResponse.from(jogoService.buscarPorId(id));
+        return jogoService.buscarPorId(id);
     }
 
-    @Operation(summary = "Listar jogos", description = "Lista paginada de jogos não deletados.")
+    @Operation(summary = "Listar jogos", description = "Lista paginada de jogos não deletados, com dados de exibição e resumo da campanha.")
     @ApiResponse(responseCode = "200", description = "Página de jogos")
     @GetMapping
     public Page<JogoResponse> listar(Pageable pageable) {
-        return jogoService.listar(pageable).map(JogoResponse::from);
+        return jogoService.listar(pageable);
     }
 
     @Operation(summary = "Atualizar jogo", description = "Apenas o dono pode atualizar.")
@@ -91,7 +90,7 @@ public class JogoController {
             @PathVariable Long id,
             @Valid @RequestBody JogoUpdateRequest request,
             @AuthenticationPrincipal UUID autorId) {
-        return JogoResponse.from(jogoService.atualizar(id, request, autorId));
+        return jogoService.atualizar(id, request, autorId);
     }
 
     @Operation(summary = "Deletar jogo (lógico)", description = "Marca o jogo como deletado. Apenas o dono pode executar.")

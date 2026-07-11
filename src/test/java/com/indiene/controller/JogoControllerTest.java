@@ -3,7 +3,7 @@ package com.indiene.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.indiene.dto.request.JogoCreateRequest;
 import com.indiene.dto.request.JogoUpdateRequest;
-import com.indiene.model.Jogo;
+import com.indiene.dto.response.JogoResponse;
 import com.indiene.service.JogoService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +26,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -73,65 +72,71 @@ class JogoControllerTest {
         return new UsernamePasswordAuthenticationToken(id, null, List.of());
     }
 
-    private Jogo jogo(Long id, String titulo) {
-        return Jogo.builder()
-                .id(id)
-                .titulo(titulo)
-                .usuarioId(AUTOR)
-                .build();
+    private JogoResponse response(Long id, String titulo) {
+        return new JogoResponse(
+                id, titulo, null, 100_000.0, 86, null, null, 87, 1, 4, true, null,
+                AUTOR, "To The Sky", List.of("Roguelike"), List.of("destaque"), List.of("Windows"),
+                50_000.0, 851L, 68, 42);
+    }
+
+    private JogoCreateRequest createRequest(String titulo) {
+        return new JogoCreateRequest(
+                titulo, null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     @Test
     void criar_comPayloadValido_retorna201ComLocationECorpo() throws Exception {
-        Jogo salvo = jogo(7L, "Indie Quest");
-        when(jogoService.criar(any(JogoCreateRequest.class), eq(AUTOR))).thenReturn(salvo);
-
-        JogoCreateRequest request = new JogoCreateRequest(
-                "Indie Quest", null, null, null, null, null, null, null, null, null);
+        when(jogoService.criar(any(JogoCreateRequest.class), eq(AUTOR))).thenReturn(response(7L, "God Breakers"));
 
         mockMvc.perform(post("/jogos")
                         .with(authentication(authFor(AUTOR)))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(createRequest("God Breakers"))))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", org.hamcrest.Matchers.endsWith("/jogos/7")))
                 .andExpect(jsonPath("$.id").value(7))
-                .andExpect(jsonPath("$.usuarioId").value(AUTOR.toString()));
+                .andExpect(jsonPath("$.usuarioId").value(AUTOR.toString()))
+                .andExpect(jsonPath("$.desenvolvedor").value("To The Sky"))
+                .andExpect(jsonPath("$.generos[0]").value("Roguelike"))
+                .andExpect(jsonPath("$.metaPercentual").value(68));
     }
 
     @Test
     void criar_comTituloEmBranco_retorna400() throws Exception {
-        String payload = """
-                {"titulo":""}
-                """;
-
         mockMvc.perform(post("/jogos")
                         .with(authentication(authFor(AUTOR)))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content("{\"titulo\":\"\"}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void criar_comMetaFinanceiraNegativa_retorna400() throws Exception {
-        String payload = """
-                {"titulo":"Indie Quest","metaFinanceira":-1.0}
-                """;
-
         mockMvc.perform(post("/jogos")
                         .with(authentication(authFor(AUTOR)))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content("{\"titulo\":\"God Breakers\",\"metaFinanceira\":-1.0}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void criar_comAvaliacaoForaDoIntervalo_retorna400() throws Exception {
+        mockMvc.perform(post("/jogos")
+                        .with(authentication(authFor(AUTOR)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"titulo\":\"God Breakers\",\"avaliacao\":150}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void buscarPorId_quandoExiste_retorna200() throws Exception {
-        when(jogoService.buscarPorId(7L)).thenReturn(jogo(7L, "Indie Quest"));
+        when(jogoService.buscarPorId(7L)).thenReturn(response(7L, "God Breakers"));
 
         mockMvc.perform(get("/jogos/7").with(authentication(authFor(AUTOR))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(7));
+                .andExpect(jsonPath("$.id").value(7))
+                .andExpect(jsonPath("$.plataformas[0]").value("Windows"))
+                .andExpect(jsonPath("$.diasRestantes").value(42));
     }
 
     @Test
@@ -145,23 +150,23 @@ class JogoControllerTest {
 
     @Test
     void listar_retornaPaginaDeResponses() throws Exception {
-        Page<Jogo> page = new PageImpl<>(List.of(jogo(1L, "a"), jogo(2L, "b")));
+        Page<JogoResponse> page = new PageImpl<>(List.of(response(1L, "a"), response(2L, "b")));
         when(jogoService.listar(any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/jogos").with(authentication(authFor(AUTOR))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].desenvolvedor").value("To The Sky"))
                 .andExpect(jsonPath("$.totalElements").value(2));
     }
 
     @Test
     void atualizar_quandoDono_retorna200() throws Exception {
-        Jogo atualizado = jogo(7L, "novo");
         when(jogoService.atualizar(eq(7L), any(JogoUpdateRequest.class), eq(AUTOR)))
-                .thenReturn(atualizado);
+                .thenReturn(response(7L, "novo"));
 
         JogoUpdateRequest request = new JogoUpdateRequest(
-                "novo", null, null, null, null, null, null, null, null, null);
+                "novo", null, null, null, null, null, null, null, null, null, null, null, null, null);
 
         mockMvc.perform(put("/jogos/7")
                         .with(authentication(authFor(AUTOR)))
@@ -177,7 +182,7 @@ class JogoControllerTest {
                 .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Operação permitida apenas ao dono do jogo"));
 
         JogoUpdateRequest request = new JogoUpdateRequest(
-                "novo", null, null, null, null, null, null, null, null, null);
+                "novo", null, null, null, null, null, null, null, null, null, null, null, null, null);
 
         mockMvc.perform(put("/jogos/7")
                         .with(authentication(authFor(AUTOR)))
