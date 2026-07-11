@@ -2,9 +2,12 @@ package com.indiene.service;
 
 import com.indiene.dto.request.ComentarioCreateRequest;
 import com.indiene.dto.request.ComentarioUpdateRequest;
+import com.indiene.dto.response.ComentarioResponse;
 import com.indiene.model.Comentario;
 import com.indiene.repository.ComentarioRepository;
+import com.indiene.repository.CurtidaRepository;
 import com.indiene.repository.PostagemRepository;
+import com.indiene.repository.ReacaoAgregada;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -42,6 +45,9 @@ class ComentarioServiceTest {
     @Mock
     private PostagemRepository postagemRepository;
 
+    @Mock
+    private CurtidaRepository curtidaRepository;
+
     @InjectMocks
     private ComentarioService comentarioService;
 
@@ -55,17 +61,19 @@ class ComentarioServiceTest {
             return c;
         });
 
-        Comentario resultado = comentarioService.criar(request, AUTOR);
+        ComentarioResponse resposta = comentarioService.criar(request, AUTOR);
 
         ArgumentCaptor<Comentario> captor = ArgumentCaptor.forClass(Comentario.class);
         verify(comentarioRepository).save(captor.capture());
         Comentario salvo = captor.getValue();
-
         assertThat(salvo.getTexto()).isEqualTo("muito bom");
         assertThat(salvo.getPostagemId()).isEqualTo(1L);
         assertThat(salvo.getUsuarioId()).isEqualTo(AUTOR);
         assertThat(salvo.getData()).isNotNull();
-        assertThat(resultado.getId()).isEqualTo(7L);
+
+        assertThat(resposta.id()).isEqualTo(7L);
+        assertThat(resposta.likes()).isZero();
+        assertThat(resposta.dislikes()).isZero();
     }
 
     @Test
@@ -82,18 +90,6 @@ class ComentarioServiceTest {
     }
 
     @Test
-    void listarPorPostagem_repassaPageableAoRepository() {
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<Comentario> pagina = new PageImpl<>(List.of(comentario(1L, AUTOR), comentario(2L, AUTOR)));
-        when(comentarioRepository.findByPostagemId(1L, pageable)).thenReturn(pagina);
-
-        Page<Comentario> resultado = comentarioService.listarPorPostagem(1L, pageable);
-
-        assertThat(resultado).isSameAs(pagina);
-        verify(comentarioRepository).findByPostagemId(1L, pageable);
-    }
-
-    @Test
     void buscarPorId_quandoNaoExiste_lancaNotFound() {
         when(comentarioRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -104,15 +100,47 @@ class ComentarioServiceTest {
     }
 
     @Test
+    void buscarPorId_incluiContagemDeReacoes() {
+        when(comentarioRepository.findById(1L)).thenReturn(Optional.of(comentario(1L, AUTOR)));
+        when(curtidaRepository.countByComentarioIdAndTipoIgnoreCase(1L, "LIKE")).thenReturn(3L);
+        when(curtidaRepository.countByComentarioIdAndTipoIgnoreCase(1L, "DISLIKE")).thenReturn(1L);
+
+        ComentarioResponse resposta = comentarioService.buscarPorId(1L);
+
+        assertThat(resposta.likes()).isEqualTo(3L);
+        assertThat(resposta.dislikes()).isEqualTo(1L);
+    }
+
+    @Test
+    void listarPorPostagem_agregaReacoesEmLote() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Comentario> pagina = new PageImpl<>(List.of(comentario(1L, AUTOR), comentario(2L, AUTOR)));
+        when(comentarioRepository.findByPostagemId(1L, pageable)).thenReturn(pagina);
+        when(curtidaRepository.agregarReacoesPorComentarios(any())).thenReturn(List.of(
+                reacao(1L, "LIKE", 5L),
+                reacao(1L, "DISLIKE", 2L)));
+
+        Page<ComentarioResponse> resultado = comentarioService.listarPorPostagem(1L, pageable);
+
+        assertThat(resultado.getContent()).hasSize(2);
+        assertThat(resultado.getContent().get(0).likes()).isEqualTo(5L);
+        assertThat(resultado.getContent().get(0).dislikes()).isEqualTo(2L);
+        assertThat(resultado.getContent().get(1).likes()).isZero();
+        assertThat(resultado.getContent().get(1).dislikes()).isZero();
+    }
+
+    @Test
     void atualizar_quandoAutor_atualizaTexto() {
         Comentario existente = comentario(1L, AUTOR);
         when(comentarioRepository.findById(1L)).thenReturn(Optional.of(existente));
         when(comentarioRepository.save(any(Comentario.class))).thenAnswer(i -> i.getArgument(0));
+        when(curtidaRepository.countByComentarioIdAndTipoIgnoreCase(1L, "LIKE")).thenReturn(4L);
+        when(curtidaRepository.countByComentarioIdAndTipoIgnoreCase(1L, "DISLIKE")).thenReturn(0L);
 
-        Comentario resultado = comentarioService.atualizar(1L, new ComentarioUpdateRequest("novo texto"), AUTOR);
+        ComentarioResponse resposta = comentarioService.atualizar(1L, new ComentarioUpdateRequest("novo texto"), AUTOR);
 
-        assertThat(resultado.getTexto()).isEqualTo("novo texto");
-        assertThat(resultado.getUsuarioId()).isEqualTo(AUTOR);
+        assertThat(resposta.texto()).isEqualTo("novo texto");
+        assertThat(resposta.likes()).isEqualTo(4L);
     }
 
     @Test
@@ -159,5 +187,13 @@ class ComentarioServiceTest {
                 .postagemId(1L)
                 .usuarioId(autor)
                 .build();
+    }
+
+    private ReacaoAgregada reacao(Long comentarioId, String tipo, long total) {
+        return new ReacaoAgregada() {
+            public Long getComentarioId() { return comentarioId; }
+            public String getTipo() { return tipo; }
+            public long getTotal() { return total; }
+        };
     }
 }

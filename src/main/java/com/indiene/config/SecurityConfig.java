@@ -21,7 +21,17 @@ public class SecurityConfig {
     private static final String[] PUBLIC_GET = {
             "/v3/api-docs/**",
             "/swagger-ui/**",
-            "/swagger-ui.html"
+            "/swagger-ui.html",
+            // Leitura pública do catálogo e das páginas de campanha (escritas seguem autenticadas).
+            "/jogos",
+            "/jogos/**",
+            "/doacoes/resumo",
+            "/imagens",
+            "/plataformas",
+            "/publicacoes",
+            "/publicacoes/**",
+            "/comentarios",
+            "/comentarios/**"
     };
 
     @Bean

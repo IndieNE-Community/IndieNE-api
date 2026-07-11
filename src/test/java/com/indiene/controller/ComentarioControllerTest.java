@@ -3,7 +3,7 @@ package com.indiene.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.indiene.dto.request.ComentarioCreateRequest;
 import com.indiene.dto.request.ComentarioUpdateRequest;
-import com.indiene.model.Comentario;
+import com.indiene.dto.response.ComentarioResponse;
 import com.indiene.service.ComentarioService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +26,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -73,13 +72,14 @@ class ComentarioControllerTest {
         return new UsernamePasswordAuthenticationToken(id, null, List.of());
     }
 
+    private ComentarioResponse response(Long id, String texto, long likes, long dislikes) {
+        return new ComentarioResponse(id, texto, null, 1L, AUTOR, likes, dislikes);
+    }
+
     @Test
     void criar_comPayloadValido_retorna201ComLocationECorpo() throws Exception {
-        Comentario salvo = Comentario.builder()
-                .id(7L).texto("muito bom").data(LocalDateTime.now())
-                .postagemId(1L).usuarioId(AUTOR).build();
-
-        when(comentarioService.criar(any(ComentarioCreateRequest.class), eq(AUTOR))).thenReturn(salvo);
+        when(comentarioService.criar(any(ComentarioCreateRequest.class), eq(AUTOR)))
+                .thenReturn(response(7L, "muito bom", 0L, 0L));
 
         ComentarioCreateRequest request = new ComentarioCreateRequest("muito bom", 1L);
 
@@ -92,46 +92,37 @@ class ComentarioControllerTest {
                 .andExpect(jsonPath("$.id").value(7))
                 .andExpect(jsonPath("$.texto").value("muito bom"))
                 .andExpect(jsonPath("$.postagemId").value(1))
-                .andExpect(jsonPath("$.usuarioId").value(AUTOR.toString()));
+                .andExpect(jsonPath("$.usuarioId").value(AUTOR.toString()))
+                .andExpect(jsonPath("$.likes").value(0));
     }
 
     @Test
     void criar_comTextoEmBranco_retorna400() throws Exception {
-        String payload = """
-                {"texto":"","postagemId":1}
-                """;
-
         mockMvc.perform(post("/comentarios")
                         .with(authentication(authFor(AUTOR)))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content("{\"texto\":\"\",\"postagemId\":1}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void criar_semPostagemId_retorna400() throws Exception {
-        String payload = """
-                {"texto":"oi"}
-                """;
-
         mockMvc.perform(post("/comentarios")
                         .with(authentication(authFor(AUTOR)))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
+                        .content("{\"texto\":\"oi\"}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void buscarPorId_quandoExiste_retorna200() throws Exception {
-        Comentario comentario = Comentario.builder()
-                .id(7L).texto("t").data(LocalDateTime.now())
-                .postagemId(1L).usuarioId(AUTOR).build();
-
-        when(comentarioService.buscarPorId(7L)).thenReturn(comentario);
+    void buscarPorId_quandoExiste_retorna200ComContagens() throws Exception {
+        when(comentarioService.buscarPorId(7L)).thenReturn(response(7L, "t", 58L, 3L));
 
         mockMvc.perform(get("/comentarios/7").with(authentication(authFor(AUTOR))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(7));
+                .andExpect(jsonPath("$.id").value(7))
+                .andExpect(jsonPath("$.likes").value(58))
+                .andExpect(jsonPath("$.dislikes").value(3));
     }
 
     @Test
@@ -145,16 +136,13 @@ class ComentarioControllerTest {
 
     @Test
     void listar_retornaPaginaDeResponses() throws Exception {
-        Comentario comentario = Comentario.builder()
-                .id(1L).texto("a").data(LocalDateTime.now())
-                .postagemId(1L).usuarioId(AUTOR).build();
-
-        Page<Comentario> page = new PageImpl<>(List.of(comentario));
+        Page<ComentarioResponse> page = new PageImpl<>(List.of(response(1L, "a", 5L, 1L)));
         when(comentarioService.listarPorPostagem(eq(1L), any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/comentarios").param("postagemId", "1").with(authentication(authFor(AUTOR))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].likes").value(5))
                 .andExpect(jsonPath("$.totalElements").value(1));
     }
 
@@ -166,12 +154,8 @@ class ComentarioControllerTest {
 
     @Test
     void atualizar_quandoAutor_retorna200() throws Exception {
-        Comentario atualizado = Comentario.builder()
-                .id(7L).texto("novo").data(LocalDateTime.now())
-                .postagemId(1L).usuarioId(AUTOR).build();
-
         when(comentarioService.atualizar(eq(7L), any(ComentarioUpdateRequest.class), eq(AUTOR)))
-                .thenReturn(atualizado);
+                .thenReturn(response(7L, "novo", 0L, 0L));
 
         ComentarioUpdateRequest request = new ComentarioUpdateRequest("novo");
 
