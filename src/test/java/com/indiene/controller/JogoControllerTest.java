@@ -120,6 +120,33 @@ class JogoControllerTest {
     }
 
     @Test
+    void criar_comMetaFinanceiraZero_retorna400() throws Exception {
+        mockMvc.perform(post("/jogos")
+                        .with(authentication(authFor(AUTOR)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"titulo\":\"God Breakers\",\"metaFinanceira\":0.0}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void atualizar_comMetaFinanceiraZero_retorna400() throws Exception {
+        mockMvc.perform(put("/jogos/7")
+                        .with(authentication(authFor(AUTOR)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"titulo\":\"God Breakers\",\"metaFinanceira\":0.0}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void atualizar_comMetaFinanceiraNegativa_retorna400() throws Exception {
+        mockMvc.perform(put("/jogos/7")
+                        .with(authentication(authFor(AUTOR)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"titulo\":\"God Breakers\",\"metaFinanceira\":-1.0}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void criar_comAvaliacaoForaDoIntervalo_retorna400() throws Exception {
         mockMvc.perform(post("/jogos")
                         .with(authentication(authFor(AUTOR)))

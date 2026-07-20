@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
@@ -18,8 +19,8 @@ public record JogoCreateRequest(
         @Schema(description = "Descrição do jogo")
         @Size(max = 10_000) String descricao,
 
-        @Schema(description = "Meta financeira da campanha", example = "100000.00")
-        @PositiveOrZero Double metaFinanceira,
+        @Schema(description = "Meta financeira da campanha (maior que zero; nula quando não há campanha)", example = "100000.00")
+        @Positive Double metaFinanceira,
 
         @Schema(description = "Duração da campanha em dias", example = "86")
         @PositiveOrZero Integer campanha,
