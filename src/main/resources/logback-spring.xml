@@ -4,9 +4,9 @@
 
   - Console: mantém o comportamento padrão do Spring Boot (aparece no Render e no local).
   - Loki: envia os logs para o Grafana Cloud, mas SOMENTE quando as env vars existem.
-          Assim, rodar local/testes sem essas variáveis continua funcionando normal.
+          Sem elas (local/testes), usa apenas o console — sem erro.
 
-  Variáveis de ambiente esperadas (setar no Render):
+  Env vars esperadas (setar no Render):
     LOKI_URL   -> ex.: https://logs-prod-XX.grafana.net/loki/api/v1/push
     LOKI_USER  -> ID numérico do Loki (usuário/instance id)
     LOKI_TOKEN -> Access Policy token com escopo logs:write
@@ -22,7 +22,7 @@
     <property scope="context" name="lokiUser"  value="${LOKI_USER:-}"/>
     <property scope="context" name="lokiToken" value="${LOKI_TOKEN:-}"/>
 
-    <!-- Só define o appender Loki quando LOKI_URL está preenchida. -->
+    <!-- Com LOKI_URL: console + Loki. Sem LOKI_URL: só console. -->
     <if condition='!property("lokiUrl").isEmpty()'>
         <then>
             <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
@@ -42,16 +42,16 @@
                     </message>
                 </format>
             </appender>
-        </then>
-    </if>
-
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-        <if condition='!property("lokiUrl").isEmpty()'>
-            <then>
+            <root level="INFO">
+                <appender-ref ref="CONSOLE"/>
                 <appender-ref ref="LOKI"/>
-            </then>
-        </if>
-    </root>
+            </root>
+        </then>
+        <else>
+            <root level="INFO">
+                <appender-ref ref="CONSOLE"/>
+            </root>
+        </else>
+    </if>
 
 </configuration>
