@@ -3,6 +3,7 @@ package com.indiene.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.indiene.dto.request.DoacaoCreateRequest;
 import com.indiene.dto.response.CampanhaResumoResponse;
+import com.indiene.dto.response.DoacaoResponse;
 import com.indiene.model.Doacao;
 import com.indiene.service.DoacaoService;
 import org.junit.jupiter.api.Test;
@@ -115,13 +116,14 @@ class DoacaoControllerTest {
 
     @Test
     void listar_porJogo_retornaPagina() throws Exception {
-        Doacao doacao = Doacao.builder().id(1L).valor(50.0).jogoId(1L).usuarioId(DOADOR).build();
-        Page<Doacao> page = new PageImpl<>(List.of(doacao));
+        DoacaoResponse doacao = new DoacaoResponse(1L, 50.0, null, 1L, DOADOR, "Bruno Lima");
+        Page<DoacaoResponse> page = new PageImpl<>(List.of(doacao));
         when(doacaoService.listarPorJogo(eq(1L), any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/doacoes").param("jogoId", "1").with(authentication(authFor(DOADOR))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].usuarioNome").value("Bruno Lima"))
                 .andExpect(jsonPath("$.totalElements").value(1));
     }
 
