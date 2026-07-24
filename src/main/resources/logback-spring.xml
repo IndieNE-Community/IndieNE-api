@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Logging do IndieNE.
+
+  - Console: mantém o comportamento padrão do Spring Boot (aparece no Render e no local).
+  - Loki: envia os logs para o Grafana Cloud, mas SOMENTE quando as env vars existem.
+          Assim, rodar local/testes sem essas variáveis continua funcionando normal.
+
+  Variáveis de ambiente esperadas (setar no Render):
+    LOKI_URL   -> ex.: https://logs-prod-XX.grafana.net/loki/api/v1/push
+    LOKI_USER  -> ID numérico do Loki (usuário/instance id)
+    LOKI_TOKEN -> Access Policy token com escopo logs:write
+-->
+<configuration>
+
+    <!-- Padrões e appender de console padrão do Spring Boot. -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <!-- Lê as env vars (default vazio se não existirem). -->
+    <property scope="context" name="lokiUrl"   value="${LOKI_URL:-}"/>
+    <property scope="context" name="lokiUser"  value="${LOKI_USER:-}"/>
+    <property scope="context" name="lokiToken" value="${LOKI_TOKEN:-}"/>
+
+    <!-- Só define o appender Loki quando LOKI_URL está preenchida. -->
+    <if condition='!property("lokiUrl").isEmpty()'>
+        <then>
+            <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+                <http>
+                    <url>${lokiUrl}</url>
+                    <auth>
+                        <username>${lokiUser}</username>
+                        <password>${lokiToken}</password>
+                    </auth>
+                </http>
+                <format>
+                    <label>
+                        <pattern>app=indiene-api,level=%level</pattern>
+                    </label>
+                    <message>
+                        <pattern>${FILE_LOG_PATTERN}</pattern>
+                    </message>
+                </format>
+            </appender>
+        </then>
+    </if>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <if condition='!property("lokiUrl").isEmpty()'>
+            <then>
+                <appender-ref ref="LOKI"/>
+            </then>
+        </if>
+    </root>
+
+</configuration>
