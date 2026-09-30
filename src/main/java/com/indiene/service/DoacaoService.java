@@ -2,10 +2,13 @@ package com.indiene.service;
 
 import com.indiene.dto.request.DoacaoCreateRequest;
 import com.indiene.dto.response.CampanhaResumoResponse;
+import com.indiene.dto.response.DoacaoResponse;
 import com.indiene.model.Doacao;
 import com.indiene.model.Jogo;
+import com.indiene.model.Usuario;
 import com.indiene.repository.DoacaoRepository;
 import com.indiene.repository.JogoRepository;
+import com.indiene.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,7 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +29,7 @@ public class DoacaoService {
 
     private final DoacaoRepository doacaoRepository;
     private final JogoRepository jogoRepository;
+    private final UsuarioRepository usuarioRepository;
 
     @Transactional
     public Doacao criar(DoacaoCreateRequest request, UUID autorId) {
@@ -45,8 +52,18 @@ public class DoacaoService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Doacao> listarPorJogo(Long jogoId, Pageable pageable) {
-        return doacaoRepository.findByJogoId(jogoId, pageable);
+    public Page<DoacaoResponse> listarPorJogo(Long jogoId, Pageable pageable) {
+        Page<Doacao> doacoes = doacaoRepository.findByJogoId(jogoId, pageable);
+
+        List<UUID> usuarioIds = doacoes.getContent().stream()
+                .map(Doacao::getUsuarioId)
+                .distinct()
+                .toList();
+
+        Map<UUID, String> nomes = usuarioRepository.findAllById(usuarioIds).stream()
+                .collect(Collectors.toMap(Usuario::getId, Usuario::getNome));
+
+        return doacoes.map(d -> DoacaoResponse.from(d, nomes.get(d.getUsuarioId())));
     }
 
     @Transactional(readOnly = true)

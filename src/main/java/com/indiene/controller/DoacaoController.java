@@ -76,7 +76,7 @@ public class DoacaoController {
     @ApiResponse(responseCode = "200", description = "Página de doações")
     @GetMapping
     public Page<DoacaoResponse> listar(@RequestParam Long jogoId, Pageable pageable) {
-        return doacaoService.listarPorJogo(jogoId, pageable).map(DoacaoResponse::from);
+        return doacaoService.listarPorJogo(jogoId, pageable);
     }
 
     @Operation(summary = "Resumo da campanha de um jogo",

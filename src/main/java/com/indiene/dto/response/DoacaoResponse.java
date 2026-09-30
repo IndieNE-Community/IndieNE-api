@@ -21,16 +21,24 @@ public record DoacaoResponse(
         Long jogoId,
 
         @Schema(description = "ID do usuário doador", example = "3f9c2b14-7d4e-4f1c-9a3e-2bc8a1f0e9d7")
-        UUID usuarioId
+        UUID usuarioId,
+
+        @Schema(description = "Nome do usuário doador (apoiador)", example = "Ana Beatriz")
+        String usuarioNome
 ) {
 
     public static DoacaoResponse from(Doacao doacao) {
+        return from(doacao, null);
+    }
+
+    public static DoacaoResponse from(Doacao doacao, String usuarioNome) {
         return new DoacaoResponse(
                 doacao.getId(),
                 doacao.getValor(),
                 doacao.getData(),
                 doacao.getJogoId(),
-                doacao.getUsuarioId()
+                doacao.getUsuarioId(),
+                usuarioNome
         );
     }
 }
