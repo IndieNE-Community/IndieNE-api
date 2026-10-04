@@ -12,6 +12,12 @@ spring:
       ddl-auto: none
     open-in-view: false
 
+  flyway:
+    locations: classpath:db/migration
+
 jwt:
   secret: ${JWT_SECRET:troque-este-segredo-para-um-valor-com-pelo-menos-32-bytes-em-producao}
   expiration: 86400000
+
+server:
+  port: ${SERVER_PORT:6089}
